@@ -12,7 +12,8 @@ From user perspective this system just should have NNN endpoints.
 
 ```json
 {
-  "link": "https://example.com/long-url"
+  "link": "https://example.com/long-url",
+  "ttl": 2592000
 }
 ```
 
@@ -23,6 +24,27 @@ From user perspective this system just should have NNN endpoints.
 ```json
 {
   "key": "a1B2c3"  // 6-character Base64-encoded string
+}
+```
+
+* `400 Bad Request`
+
+```json
+{
+  "msgs": [
+    "invalid expiration time",
+    "link is long",
+    "empty link",
+    "invalid headers",
+  ]
+}
+```
+
+* `429 Too Many Requests`
+
+```json
+{
+  "msg": "Rate limit exceeded. Try again later."
 }
 ```
 
