@@ -129,9 +129,21 @@ What is important:
 
 I guess UINT32 is simple for developer, database, indexing and user. Also it's capacity is ~4x than what we need.
 
+---
+
+After brainstorm and talking about bottlenecks we found UINT32 database with 4B capacity will made many problems for us. We need a Key Generation System, this system must be distributed and fault-tolerant. Using a Hi-Lo algorithm with UINT32 severely limits our ability to scale the number of generator instances. We would be constrained to a single point of failure, or at best a very limited pool, to avoid collisions. This directly conflicts with high-availability goals where we need multiple generators behind service discovery to minimize downtime.
+
+Furthermore, even if we consider random assignment within the UINT32 space for key generation, the probability of collisions becomes non-trivial and a real operational risk at our scale. Managing that risk adds complexity, which negates the initial simplicity advantage.
+
+Therefore, moving to a 64-bit key space is the pragmatic choice. The storage overhead is minimal – only an additional 5 GB for 1.2 billion keys – which is insignificant given modern storage capacities and costs. This cost is negligible compared to the engineering and operational complexity we avoid.
+
+The 64-bit space provides a massive capacity (~18.4 quintillion entries), which eliminates collision worries for random generation and, more importantly, allows for a truly distributed key generation system. We can implement a scalable Hi-Lo or Snowflake-like algorithm where multiple independent instances can generate keys without coordination, each operating within a guaranteed non-overlapping segment of the ID space. This aligns perfectly with our cloud-native, distributed service architecture.
+
+In summary, while UINT32 appears simpler on paper, its capacity constraints force difficult trade-offs in system design, reliability, and scalability. UINT64 (BIGINT/BINARY(8)) offers future-proof capacity and enables the distributed, resilient key generation system we require, for a negligible storage cost. The complexity shifts from managing a brittle key generation process to simply using a larger, well-supported data type.
+
 ### Len
 
-short link size = 4 bytes and encoded len = 6
+short link size = 8 bytes and encoded len = 6
 offered link max len = 1K
 
 Each link with it's information should be **~1KB**
@@ -160,7 +172,7 @@ Read = 400 QPS * 1k => 4MB/s
 | **Writes**           | 100 links / user / month | Given                 | **1B links / year**         |
 | **Write QPS**        | Uniform distribution     | users × links / month | **≈ 40 QPS**                |
 | **Read QPS**         | 1:100 write:read ratio   | write QPS × 100       | **≈ 4,000 QPS**             |
-| **Short Key**        | UINT32                   | 4 bytes               | **4 B (6 chars encoded)**   |
+| **Short Key**        | UINT64 (as Base64)       | 8 bytes               | **8 B (6 chars encoded)**   |
 | **Long URL**         | Max offered length       | Given                 | **~1 KB**                   |
 | **Record Size**      | URL + metadata           | Rounded               | **~1 KB / link**            |
 | **Retention**        | Persistent links         | 5 years               | —                           |
