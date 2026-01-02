@@ -74,6 +74,12 @@ In KGS each request to getting keys are unique but keeping keys should be manage
 Saving in local cache is good but it will causes to missing more keys in the case of instance outage.
 We can utilize distributed cache for tolerating key loss.
 
+But for simplecity we don't use distributed cache and consider it overkill. Using local cache for reserving future
+key range is efficient and siple enough.
+
+We save two ranges for each instance. When first range filled we offer keys of second range and request to database
+asyncly. External service will not sense of inconsistent response with this strategy.
+
 ## Telemetry
 KGS need expose response time, hardware usage, managing key pool, database quey results (success or failure rates)
 and external service connections.
