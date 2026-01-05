@@ -94,3 +94,24 @@ Each service can keep data in separate or at least theorically separate distribu
 KGS can keep key ranges on cache, manage pool concurrently. Key pool management is a shared and common pattern/module
 with KGS and other services that need this service and will reduce requests between KGS and database and internal services
 and KGS.
+
+# 8 byte key
+32 bit integer is sufficient for 6 character base64 encoded string. But we have a big limit in scaling KGS.
+If we choose 32 bit key and limit all keys to 6 characters we should accept 3 KGS node limit. Why?
+We should assign maximum capacity of of 5 years links (1.2 Bilion) for each KGS node.
+3 node limit is not acceptable. System can utilize 64 bit counter and start with first 32 bit.
+In the critical situations for backup and disaster recovery plan, nothing wrong in generating some 7-12 character keys!
+
+We can utilize such a algorithm for generating keys:
+
+```go
+func GenerateID(counter uint64) string {
+	key := make([]byte, 8)
+	binary.LittleEndian.PutUint64(key, counter)
+	nbits := (bits.Len64(counter) + 7) >> 3
+	return base64.RawURLEncoding.EncodeToString(key[:nbits])
+}
+```
+
+With this algorithm I decide start from 6 character and if scale became large we can add more characters.
+Also key expiration is the option.
