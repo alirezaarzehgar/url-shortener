@@ -1,0 +1,18 @@
+services:
+  scylla1:
+    container_name: scylla1
+    image: docker.arvancloud.ir/scylladb/scylla:latest
+    ports:
+      - 9001:9042
+  scylla2:
+    container_name: scylla2
+    image: docker.arvancloud.ir/scylladb/scylla:latest
+    ports:
+      - 9002:9042
+    command: --seeds=scylla1
+  scylla3:
+    container_name: scylla3
+    image: docker.arvancloud.ir/scylladb/scylla:latest
+    ports:
+      - 9003:9042
+    command: --seeds=scylla1

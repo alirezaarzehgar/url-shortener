@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scylla-operator
+  namespace: scylla-operator
+spec:
+  template:
+    spec:
+      containers:
+      - name: scylla-operator
+        image: docker.io/scylladb/scylla-operator:1.18.0@sha256:ea1d287c2699efdfdb040b4a8c35be74a12d19b292541d8a4204f7a079731ca6
+        env:
+        - name: SCYLLA_OPERATOR_IMAGE
+          value: docker.io/scylladb/scylla-operator:1.18.0@sha256:ea1d287c2699efdfdb040b4a8c35be74a12d19b292541d8a4204f7a079731ca6
