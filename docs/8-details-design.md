@@ -7,3 +7,7 @@ start.
 Each key request to KGS will causes to counting keys and this operation is also independent.
 
 This solution do not need failover because each KGS instance produce unique keys and there are no overlap.
+
+## Manage KGS nodes
+For small scale managing KGS nodes using K8s manifests and manage nodes using load balancer.
+In the next step KGS can have its own K8s Operator and enable autoscaling.
