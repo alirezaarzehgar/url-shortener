@@ -4,20 +4,52 @@ We can't use UUID or Snowflake solutions for ID/key generation because they need
 key with 12 character base64 string that it's not acceptable. For 1.2 billions link we can
 use incremental ID in UINT32 datatype but high availablity requirements don't let us thinking about
 databases with strong consistency and isolation. We choose BASE solutions to reduce failover downtime
-to achive high availability. In BASE databases we can't utilize autoincremention and we need a KGS
-(Key Generation Service). Our solution to generating keys is Hi/Lo Allocator and this algorithm
-needs autoincremention. For this we can need consistency and we can accept failover down time for
-small KGS database.  Also we can up n cluster of KGS databases and use service discover to route
-service to that clusters. Naturally each KGS cluster will allocate specific range of keys and
-choosing UINT32 is a constraint for 4 cluster system in the end. We can choose BIGINT to break
-constraints and design for super big number 18446744073 possible clusters! in this case we
-have no problem with DDOS on key reservation and linear scaling is possible!
+to achive high availability. BASE database do not support autoincrement ID and we need a lock-free
+solution for generating 32-64 bit keys to assignging in long urls.
 
 # Shortener
 
 Shortener service is an stateless application with n instance. In shortening link service will
-request to KGS and get a short key. Service will save long link with generated key as primary key
-for future lookups. KGS guaranteed keys are unique and collision is impossible.
+use Cassandra LWT to counting a counter and generate unique keys per node.
+
+## Key generation
+System need a lock-free solution because BASE database do not support strong consistency.
+Considered solution is keeping a table on Cassandra/ScyllaDB and use LWT for allocating ranges
+to nodes. Each instance should have its own key range and work independently.
+
+Following code is the base idea for generating keys.
+
+```go
+// CREATE TABLE keygen.counters (key int PRIMARY KEY, value bigint);
+func allocateRange(session *gocql.Session, id int) ([]string, error) {
+	var n uint64
+	applied, err := session.Query(
+		`UPDATE keygen.counters SET value = ? WHERE key = ? IF value = ?`, n+KeyRange, id, n,
+	).ScanCAS(&n)
+	if err != nil {
+		slog.Error("failed to count", "error", err, "id", id, "count to", n)
+		return nil, err
+	}
+
+	if !applied {
+		return nil, errors.New("do not applied")
+	}
+
+	r := []string{}
+	for i := n; i < n+KeyRange; i++ {
+		r = append(r, GenerateID(i))
+	}
+	return r, nil
+}
+
+func GenerateID(counter uint64) string {
+	key := make([]byte, 8)
+	binary.LittleEndian.PutUint64(key, counter)
+	nbits := (bits.Len64(counter) + 7) >> 3
+	nbits = max(nbits, 4)
+	return base64.RawURLEncoding.EncodeToString(key[:nbits])
+}
+```
 
 ## Data System
 Shortener implelemt a port/adapter design pattern for accessing database, cache and telemetry.
@@ -37,68 +69,14 @@ for autoscaling strategies and business solutions, performance metrics like
 hardware usage and response time in various percentiles.
 Keeping number of expired links is important for changing time of expiration links
 and reporting to businesses how many users need its links event after expiration.
-Interconnection with KGS is important.
-
-## Bottleneck
-### Shortener and KGS interconnection
-Interconnection between shortener service and KGS will be bottleneck. Shortener can send request for
-bulk key generation and keep a pool of keys each time. This solution will speedup system for link creation
-but performance issues will be emerge when a new link request touch empty pool and response time
-will be inconsistent. For solving this problem service can send async request when key pool reached to
-an specific number of it's capacity and with this solution response times will be consistent.
 
 ### GC pauses
 Using key pool will due to GC pause and we can manage it will distributing service and minimazing meemory usage.
 
-
-# Key Generation Service
-KGS accept request for new keys and response new unique keys. It should be response bulk keys
-for minimizing requests between services. KGS use a cluster of base databases and configured for
-a range of keys. Each KGS cluster work on 2B range of keys and it should be configurable.
-
-## Data System
-KGS need a persistent key values store with strong consistency and linearizability for couting keys
-and guarantee uniqueness. It will cause downtime in failover and can be managed by launching multiple
-instance of KGS system with different range of keys.
-Hi/Lo allocator will miss some keys in the instance outage but it's acceptable because we have big capacity.
-
-## Algorithm
-Hi/Lo Allocator works simple by a counter. Each instance request for end number of counter, reserve it with
-defined range and increment shared counter. For example instance start working, add RANGE to COUNT and
-keep that range on memory. When each internal service requests for new key, it will count internal counter
-atomicly. Automatic pool management is a good solution also for KGS to preventing unpredictable and inconsistent
-response times for key reservation.
-
-## Cache
-In KGS each request to getting keys are unique but keeping keys should be manage in cache.
-Saving in local cache is good but it will causes to missing more keys in the case of instance outage.
-We can utilize distributed cache for tolerating key loss.
-
-But for simplecity we don't use distributed cache and consider it overkill. Using local cache for reserving future
-key range is efficient and siple enough.
-
-We save two ranges for each instance. When first range filled we offer keys of second range and request to database
-asyncly. External service will not sense of inconsistent response with this strategy.
-
-## Telemetry
-KGS need expose response time, hardware usage, managing key pool, database quey results (success or failure rates)
-and external service connections.
-
-## Bottlenecks
-### Database connections
-KGS can keep a range of key ranges to avoid response time inconsistency. This solution is shared with shortener service.
-We have two solutions. KGS generate keys and keep in the distributed cache then other services can give their keys from
-distributed cache service but it will couple tightly in specific distributed cache.
-Each service can keep data in separate or at least theorically separate distributed caches and manage data.
-
-KGS can keep key ranges on cache, manage pool concurrently. Key pool management is a shared and common pattern/module
-with KGS and other services that need this service and will reduce requests between KGS and database and internal services
-and KGS.
-
 # 8 byte key
-32 bit integer is sufficient for 6 character base64 encoded string. But we have a big limit in scaling KGS.
-If we choose 32 bit key and limit all keys to 6 characters we should accept 3 KGS node limit. Why?
-We should assign maximum capacity of of 5 years links (1.2 Bilion) for each KGS node.
+32 bit integer is sufficient for 6 character base64 encoded string. But we have a big limit in scaling key generator.
+If we choose 32 bit key and limit all keys to 6 characters we should accept 3 key generator node limit. Why?
+We should assign maximum capacity of of 5 years links (1.2 Bilion) for each key generator node.
 3 node limit is not acceptable. System can utilize 64 bit counter and start with first 32 bit.
 In the critical situations for backup and disaster recovery plan, nothing wrong in generating some 7-12 character keys!
 

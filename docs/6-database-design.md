@@ -28,51 +28,6 @@ Shortener service just need an schema with key/value structure.
 | created_at | TIMESTAMP | Creation timestamp | DEFAULT CURRENT_TIMESTAMP |
 | ttl | TTL | Expiration time | Less than 3 months |
 
-# Key Generation Service
-## Database Choice
-Unique key generation need strong consistency. PostgreSQL is overkill for an small KGS. System need a database
-that replicate easily, very lightweight with small failover time and overhead. We also need persistent key value store
-but with strong consistency.
-
-Options:
-- etcd
-- Redis with RDB
-- ACID databases (overkill and high overhead)
-- Cockroachdb
-- RocksDB
-
-We have two architecture:
-- Managing database as server (etcd, redis db, pg/mysql): High operational overhead
-- Developing KGS using embedded KV databases indpendently and loadbalancing traffic to them
-  and config specific range for all of them. It will offer a super simple independent KGS systems
-  with high fault tolerance.
-
-Winner is embedded databases for KGS and scale it linearly. Then we can hide this KGSs over LB.
-
-Options:
-- **BadgerDB**
-- **BoltDB** (now bbolt)
-- **LevelDB** (via goleveldb)
-- **Pebble**
-- **RocksDB** (via gorocksdb)
-- **SQLite** (as embedded KV using key-value tables)
-- **TiKV** (in embedded/TiDB Local mode)
-- **Bitcask** (via implementations like go-bitcask)
-- **LMDB** (via bolt-mdb or go-lmdb)
-- **NutsDB**
-- **MosDB** (Moss store)
-- **VictoriaMetrics' lib/tsdb** (for time-series-like keys)
-- **BBolt** (fork of BoltDB)
-- **Pogreb**
-
-The choice is **Badger**.
-
-## Schema
-
-| Column | Type | Description | Constraints |
-| --- | --- | --- | --- |
-| key_counter | UINT64 | Counter for assigning and counting key ranges for KGS | NOT NULL |
-
 # Observability system
 
 I need complete observability. We have many chooices but I select OTel collector with

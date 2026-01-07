@@ -12,3 +12,7 @@ This folder contains the system design documentation, structured by stage.
 - [Database Design](docs/6-database-design.md) - Data models and schema definitions.
 - [Cache Design](docs/7-cache-design.md) - Caching strategy and implementation.
 - [Detailed Design](docs/8-details-design.md) - Component specifics and optimizations.
+
+First design considered a separate service for generating unique keys for avoiding lock, ACID databases,
+collision in hashes and 6 character limit for shortened urls.
+You can visit this design [here](https://github.com/alirezaarzehgar/url-shortener/releases/tag/v1.0).
