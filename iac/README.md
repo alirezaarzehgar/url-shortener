@@ -11,4 +11,5 @@ Then start ScyllaDB cluster
 ```bash
 docker compose -f iac/docker-compose.yml up -d
 docker exec -it scylla1 nodetool status
+docker exec -it scylla1 cqlsh
 ```
