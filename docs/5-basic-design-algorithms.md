@@ -20,15 +20,90 @@ to nodes. Each instance should have its own key range and work independently.
 Following code is the base idea for generating keys.
 
 ```go
+package main
+
+import (
+	"encoding/base64"
+	"encoding/binary"
+	"errors"
+	"fmt"
+	"log/slog"
+	"math/bits"
+	"os"
+
+	"github.com/gocql/gocql"
+)
+
+/*
+ScyllaDB INIT
+CREATE KEYSPACE keygen WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3'} ;
+CREATE TABLE keygen.counters (key int PRIMARY KEY, value bigint);
+*/
+func main() {
+	slog.SetDefault(slog.New(
+		slog.NewJSONHandler(
+			os.Stdout,
+			&slog.HandlerOptions{
+				Level: slog.LevelDebug,
+			},
+		),
+	))
+
+	cluster := gocql.NewCluster(
+		"localhost:9001",
+		"localhost:9002",
+		"localhost:9003",
+	)
+	cluster.Consistency = gocql.Quorum
+	session, err := cluster.CreateSession()
+	if err != nil {
+		slog.Error("failed to create scylladb session", "error", err)
+		os.Exit(-1)
+	}
+	slog.Debug("scylladb connected successfully")
+
+	for clusterID := range 20 {
+		startCounter := clusterID * ((1 << 31) - 1)
+		err = session.Query(
+			`INSERT INTO keygen.counters (key, value) VALUES (?, ?) IF NOT EXISTS`,
+			clusterID, startCounter).Exec()
+		if err != nil {
+			slog.Error("failed to init counter table", "error", err)
+			os.Exit(1)
+		}
+
+		go func(clusterID int) {
+			for range 10000 {
+				keys, err := allocateRange(session, clusterID)
+				if err != nil {
+					slog.Error("failed to get keys", "error", err)
+					continue
+				}
+				for _, k := range keys {
+					fmt.Println(k)
+				}
+			}
+		}(clusterID)
+	}
+
+	select {}
+}
+
+var KeyRange uint64 = 50
+
 // CREATE TABLE keygen.counters (key int PRIMARY KEY, value bigint);
 func allocateRange(session *gocql.Session, id int) ([]string, error) {
 	var n uint64
+	err := session.Query("SELECT value FROM keygen.counters WHERE key = ?", id).Scan(&n)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get counter value: %w", err)
+	}
+
 	applied, err := session.Query(
 		`UPDATE keygen.counters SET value = ? WHERE key = ? IF value = ?`, n+KeyRange, id, n,
 	).ScanCAS(&n)
 	if err != nil {
-		slog.Error("failed to count", "error", err, "id", id, "count to", n)
-		return nil, err
+		return nil, fmt.Errorf("failed to update counter: %w", err)
 	}
 
 	if !applied {
