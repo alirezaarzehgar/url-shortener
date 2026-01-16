@@ -9,16 +9,17 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func rootCmdHelp(args []string) {
-	fmt.Printf("%s <server>\n", args[0])
+func rootHelp() {
+	fmt.Printf("Usage: %s <command>\n", os.Args[0])
+	fmt.Println("Commands: ")
+	fmt.Println("	server Run shortener service")
+	fmt.Println("	migrate Migrate databases")
+	os.Exit(1)
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s <command>\n", os.Args[0])
-		fmt.Println("Commands: ")
-		fmt.Println("	server Run shortener service")
-		os.Exit(1)
+		rootHelp()
 	}
 
 	if err := godotenv.Load(); err != nil {
@@ -28,9 +29,10 @@ func main() {
 
 	switch os.Args[1] {
 	case "server":
-		cmd.Server(os.Args[2:])
+		cmd.Server(os.Args[1:])
+	case "migrate":
+		cmd.Migratoin(os.Args[1:])
 	default:
-		rootCmdHelp(os.Args)
-		os.Exit(1)
+		rootHelp()
 	}
 }
