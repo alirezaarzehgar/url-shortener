@@ -32,13 +32,13 @@ func (us URLShortener) generateShortURL(key database.URLKey) service.URLKey {
 	return service.URLKey(shortenedURL)
 }
 
-func (us URLShortener) CreateShortURL(originalURL *url.URL) (service.URLKey, error) {
+func (us URLShortener) CreateShortURL(originalURL url.URL, ttl uint) (service.URLKey, error) {
 	key, err := us.nextKey()
 	if err != nil {
 		return "", fmt.Errorf("failed to get new key: %w", err)
 	}
 
-	err = us.shortenerDB.Create(key, database.URL(originalURL))
+	err = us.shortenerDB.Create(key, originalURL, ttl)
 	if err != nil {
 		return "", fmt.Errorf("failed store shortened URL: %w", err)
 	}
@@ -46,14 +46,14 @@ func (us URLShortener) CreateShortURL(originalURL *url.URL) (service.URLKey, err
 	return us.generateShortURL(key), nil
 }
 
-func (us URLShortener) GetOriginalURL(shortURL service.URLKey) (*url.URL, error) {
+func (us URLShortener) GetOriginalURL(shortURL service.URLKey) (url.URL, error) {
 	key := database.URLKey(shortURL)
 	originalURL, err := us.shortenerDB.Lookup(key)
 	if err != nil {
 		if dbErr := err.(database.Err); dbErr.NotFound() {
-			return nil, service.Err{Msg: "short url key not found", Status: service.NotFoundError, Err: dbErr}
+			return url.URL{}, service.Err{Msg: "short url key not found", Status: service.NotFoundError, Err: dbErr}
 		} else {
-			return nil, service.Err{Msg: "failed to lookup url", Status: service.InternalError, Err: dbErr}
+			return url.URL{}, service.Err{Msg: "failed to lookup url", Status: service.InternalError, Err: dbErr}
 		}
 	}
 

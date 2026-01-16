@@ -3,9 +3,8 @@ package database
 import "net/url"
 
 type URLKey string
-type URL *url.URL
 
 type URLShortener interface {
-	Create(key URLKey, originalURL URL) error
-	Lookup(key URLKey) (URL, error)
+	Create(key URLKey, originalURL url.URL, ttl uint) error
+	Lookup(key URLKey) (url.URL, error)
 }

@@ -10,9 +10,9 @@ type Config struct {
 }
 
 func LoadConfig() (Config, error) {
-	address := os.Getenv("TRANSPORT_RUNNING_ADDRESS")
+	address := os.Getenv("TRANSPORT_HTTP_RUNNING_ADDRESS")
 	if address == "" {
-		return Config{}, errors.New("TRANSPORT_RUNNING_ADDRESS is empty")
+		return Config{}, errors.New("TRANSPORT_HTTP_RUNNING_ADDRESS is empty")
 	}
 	conf := Config{shortenerAddress: address}
 	return conf, nil

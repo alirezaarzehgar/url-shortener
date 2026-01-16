@@ -23,10 +23,27 @@ Shortener service just need an schema with key/value structure.
 
 | Column | Type | Description | Constraint |
 | --- | --- | --- | --- |
-| key | UINT64 | Generated numeral key | PRIMARY KEY |
+| key | bigint | Generated numeral key | PRIMARY KEY |
 | original_url | Origianl URl for redirection | NOT NULL |
 | created_at | TIMESTAMP | Creation timestamp | DEFAULT CURRENT_TIMESTAMP |
-| ttl | TTL | Expiration time | Less than 3 months |
+
+Key generation table schema
+
+| Column | Type | Description | Constraint |
+| --- | --- | --- | --- |
+| cluster_id | int | Worker process id assigned in condig | PRIMARY KEY |
+| counter | bigint | Key counter for generating base64 key  | DEFUALT 0 |
+
+
+## ScyllaDB migration
+```sql
+-- migrate
+CREATE KEYSPACE urlshortener WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '3'};
+CREATE TABLE urlshortener.keypool (key int PRIMARY KEY, counter bigint);
+CREATE TABLE urlshortener.urls (key text PRIMARY KEY, original_url text, created_at timestamp);
+-- Seed
+INSERT INTO urlshortener.keypool (key, counter) VALUES (1, 0);
+```
 
 # Observability system
 

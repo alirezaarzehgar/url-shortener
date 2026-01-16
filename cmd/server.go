@@ -26,7 +26,7 @@ func chooseDatabaseKeyPool(choice database.Choice) database.KeyPool {
 			os.Exit(1)
 		}
 
-		return scylladb.NewKeyPool(connection)
+		return scylladb.NewKeyPool(connection, conf)
 	case database.DatabaseInMemory:
 		return inmem.NewKeyPool()
 	default:

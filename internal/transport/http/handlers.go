@@ -12,6 +12,9 @@ import (
 const (
 	MinURLKeyLen = 4
 	MaxURLKeyLen = 12
+
+	TTLMax     uint = 60 * 60 * 24 * 30 * 6
+	TTLDefault uint = 604800
 )
 
 func (t HttpTransport) controllerCreateNewShortLinkFromOriginalURL(w http.ResponseWriter, r *http.Request) {
@@ -22,6 +25,7 @@ func (t HttpTransport) controllerCreateNewShortLinkFromOriginalURL(w http.Respon
 
 	var req struct {
 		URL string `json:"url"`
+		TTL uint   `json:"ttl"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -34,8 +38,15 @@ func (t HttpTransport) controllerCreateNewShortLinkFromOriginalURL(w http.Respon
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if req.TTL > TTLMax {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if req.TTL == 0 {
+		req.TTL = TTLDefault
+	}
 
-	shortURL, err := t.svc.CreateShortURL(originalURL)
+	shortURL, err := t.svc.CreateShortURL(*originalURL, req.TTL)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
