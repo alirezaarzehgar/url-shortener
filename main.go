@@ -23,8 +23,7 @@ func main() {
 	}
 
 	if err := godotenv.Load(); err != nil {
-		slog.Error("failed to load .env", "error", err)
-		os.Exit(1)
+		slog.Warn("failed to load .env", "error", err)
 	}
 
 	switch os.Args[1] {
