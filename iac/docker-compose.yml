@@ -16,3 +16,40 @@ services:
     ports:
       - 9003:9042
     command: --seeds=scylla1
+
+  shortener1:
+    build: ..
+    environment:
+      - SCYLLADB_CLUSTER_ID=0
+      - SHORTENER_ADDRESS=http://127.0.0.1:8000
+      - TRANSPORT_HTTP_RUNNING_ADDRESS=:8000
+      - SHORTENER_DATABASE_CHOICE=scylladb
+      - KEYPOOL_DATABASE_CHOICE=scylladb
+      - SCYLLADB_CLUSTER=scylla1 scylla2 scylla3
+      - SCYLLADB_KEY_RANGE="${SCYLLADB_KEY_RANGE}"
+    ports:
+      - 8001:8000
+  shortener2:
+    build: ..
+    environment:
+      - SCYLLADB_CLUSTER_ID=1
+      - SHORTENER_ADDRESS=http://127.0.0.1:8001
+      - TRANSPORT_HTTP_RUNNING_ADDRESS=:8000
+      - SHORTENER_DATABASE_CHOICE=scylladb
+      - KEYPOOL_DATABASE_CHOICE=scylladb
+      - SCYLLADB_CLUSTER=scylla1 scylla2 scylla3
+      - SCYLLADB_KEY_RANGE="${SCYLLADB_KEY_RANGE}"
+    ports:
+      - 8002:8000
+  shortener3:
+    build: ..
+    environment:
+      - SCYLLADB_CLUSTER_ID=2
+      - SHORTENER_ADDRESS=http://127.0.0.1:8002
+      - TRANSPORT_HTTP_RUNNING_ADDRESS=:8000
+      - SHORTENER_DATABASE_CHOICE=scylladb
+      - KEYPOOL_DATABASE_CHOICE=scylladb
+      - SCYLLADB_CLUSTER=scylla1 scylla2 scylla3
+      - SCYLLADB_KEY_RANGE="${SCYLLADB_KEY_RANGE}"
+    ports:
+      - 8003:8000
