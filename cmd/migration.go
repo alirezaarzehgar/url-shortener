@@ -3,10 +3,10 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/alirezaarzehgar/url-shortener/internal/database/scylladb"
+	"github.com/alirezaarzehgar/url-shortener/internal/logger/slogger"
 )
 
 func migrateHelp() {
@@ -30,6 +30,8 @@ func Migratoin(args []string) {
 }
 
 func scyllaDBMigration(args []string) {
+	nLogger := slogger.New()
+
 	fs := flag.NewFlagSet(args[0], flag.ExitOnError)
 	uri := fs.String("uri", "localhost:9042", "scylladb uri")
 	migPath := fs.String("migrations", "./internal/database/scylladb/migrations/", "path to migrations directory for migrator")
@@ -38,12 +40,12 @@ func scyllaDBMigration(args []string) {
 
 	migrator, err := scylladb.NewMigrator(*uri, *migPath, *clusterSize)
 	if err != nil {
-		slog.Error("failed to init migrator", "error", err, "uri", *uri, "cluster-size", *clusterSize)
+		nLogger.Error("failed to init migrator", "error", err, "uri", *uri, "cluster-size", *clusterSize)
 		os.Exit(1)
 	}
 
 	if err := migrator.Run(); err != nil {
-		slog.Error("failed to run migrator", "error", err)
+		nLogger.Error("failed to run migrator", "error", err)
 		os.Exit(1)
 	}
 }

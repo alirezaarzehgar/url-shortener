@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log/slog"
 	"math/bits"
 
 	"github.com/alirezaarzehgar/url-shortener/internal/database"
@@ -16,7 +15,6 @@ func allocateRange(session *gocql.Session, id int, keyRange uint64) ([]string, e
 	var n uint64
 	err := session.Query("SELECT counter FROM urlshortener.keypool WHERE key = ?", id).Scan(&n)
 	if err != nil {
-		slog.Error("failed to get counter value", "error", err)
 		return nil, fmt.Errorf("failed to get counter value: %w", err)
 	}
 
@@ -24,7 +22,6 @@ func allocateRange(session *gocql.Session, id int, keyRange uint64) ([]string, e
 		`UPDATE urlshortener.keypool SET counter = ? WHERE key = ? IF counter = ?`, n+keyRange, id, n,
 	).ScanCAS(&n)
 	if err != nil {
-		slog.Error("failed to update keypool counter", "error", err)
 		return nil, fmt.Errorf("failed to update counter: %w", err)
 	}
 

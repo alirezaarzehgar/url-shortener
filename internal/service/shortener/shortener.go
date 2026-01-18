@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/alirezaarzehgar/url-shortener/internal/database"
+	"github.com/alirezaarzehgar/url-shortener/internal/logger"
 	"github.com/alirezaarzehgar/url-shortener/internal/service"
 )
 
@@ -13,6 +14,7 @@ type URLShortener struct {
 	shortenerDB      database.URLShortener
 	keyPoolDB        database.KeyPool
 	keyPoolRange     *database.KeyRange
+	log              logger.Logger
 }
 
 func (us URLShortener) nextKey() (database.URLKey, error) {
@@ -60,11 +62,12 @@ func (us URLShortener) GetOriginalURL(shortURL service.URLKey) (url.URL, error) 
 	return originalURL, nil
 }
 
-func New(conf Config, shortenerDB database.URLShortener, keypoolDB database.KeyPool) service.URLShortener {
+func New(conf Config, log logger.Logger, shortenerDB database.URLShortener, keypoolDB database.KeyPool) service.URLShortener {
 	return URLShortener{
 		urlResultAddress: conf.shortenerAddress,
 		shortenerDB:      shortenerDB,
 		keyPoolDB:        keypoolDB,
 		keyPoolRange:     &database.KeyRange{},
+		log:              log,
 	}
 }

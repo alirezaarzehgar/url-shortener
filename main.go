@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 
 	"github.com/alirezaarzehgar/url-shortener/cmd"
@@ -22,9 +21,7 @@ func main() {
 		rootHelp()
 	}
 
-	if err := godotenv.Load(); err != nil {
-		slog.Warn("failed to load .env", "error", err)
-	}
+	godotenv.Load()
 
 	switch os.Args[1] {
 	case "server":

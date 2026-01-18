@@ -2,16 +2,17 @@ package scylladb
 
 import (
 	"fmt"
-	"log/slog"
 	"net/url"
 	"time"
 
 	"github.com/alirezaarzehgar/url-shortener/internal/database"
+	"github.com/alirezaarzehgar/url-shortener/internal/logger"
 	"github.com/gocql/gocql"
 )
 
 type URLShortenerImpl struct {
 	ScyllaDBConnection
+	log logger.Logger
 }
 
 func (us URLShortenerImpl) Create(key database.URLKey, originalURL url.URL, ttl uint) error {
@@ -20,7 +21,7 @@ func (us URLShortenerImpl) Create(key database.URLKey, originalURL url.URL, ttl 
 		key, originalURL.String(), time.Now(), ttl,
 	).Exec()
 	if err != nil {
-		slog.Error("failed to save new short url", "error", err, "url", originalURL.String(), "ttl", ttl)
+		us.log.Error("failed to save new short url", "error", err, "url", originalURL.String(), "ttl", ttl)
 		return fmt.Errorf("failed to save new short link: %w", err)
 	}
 	return nil
@@ -31,7 +32,7 @@ func (us URLShortenerImpl) Lookup(key database.URLKey) (url.URL, error) {
 	err := us.session.Query(`SELECT original_url FROM urlshortener.urls WHERE key = ?`, key).Scan(&originalURL)
 
 	if err != nil {
-		slog.Error("failed to get original url", "error", err, "key", key)
+		us.log.Error("failed to get original url", "error", err, "key", key)
 		if err == gocql.ErrNotFound {
 			return url.URL{}, database.Err{
 				Err:    err,
@@ -49,7 +50,7 @@ func (us URLShortenerImpl) Lookup(key database.URLKey) (url.URL, error) {
 
 	u, err := url.Parse(originalURL)
 	if err != nil {
-		slog.Error("failed to parse retrieved url from database", "error", err)
+		us.log.Error("failed to parse retrieved url from database", "error", err)
 		return url.URL{}, database.Err{
 			Err:    err,
 			Msg:    "database unable to respond",
@@ -60,8 +61,9 @@ func (us URLShortenerImpl) Lookup(key database.URLKey) (url.URL, error) {
 	return *u, nil
 }
 
-func NewShortener(conn ScyllaDBConnection) database.URLShortener {
+func NewShortener(conn ScyllaDBConnection, log logger.Logger) database.URLShortener {
 	return URLShortenerImpl{
 		ScyllaDBConnection: conn,
+		log:                log,
 	}
 }
