@@ -13,6 +13,10 @@ This folder contains the system design documentation, structured by stage.
 - [Cache Design](docs/7-cache-design.md) - Caching strategy and implementation.
 - [Detailed Design](docs/8-details-design.md) - Component specifics and optimizations.
 
+**NOTE:** Implementation of this project started at Iranian Freedom Revolution. Every lines of codebase
+written without LLM, google search, stackoverflow and even internet connection! Setting proper image tags,
+redis/memcached client and image was not possible without internet connection :))
+
 First design considered a separate service for generating unique keys for avoiding lock, ACID databases,
 collision in hashes and 6 character limit for shortened urls.
 You can visit this design [here](https://github.com/alirezaarzehgar/url-shortener/releases/tag/v1.0).
