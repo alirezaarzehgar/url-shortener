@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alirezaarzehgar/url-shortener/internal/cache/local"
 	"github.com/alirezaarzehgar/url-shortener/internal/database"
 	"github.com/alirezaarzehgar/url-shortener/internal/database/inmem"
 	"github.com/alirezaarzehgar/url-shortener/internal/database/scylladb"
@@ -75,13 +76,15 @@ func Server(args []string) {
 		os.Exit(1)
 	}
 
+	localCache := local.New()
+
 	serviceConf, err := shortenerService.LoadConfig()
 	if err != nil {
 		nLogger.Error("failed to load database config", "error", err)
 		os.Exit(1)
 	}
 
-	shortener := shortenerService.New(serviceConf, nLogger, shortenerDB, keypoolDB)
+	shortener := shortenerService.New(serviceConf, nLogger, shortenerDB, keypoolDB, localCache)
 
 	transportConf, err := transportHttp.LoadConfig()
 	if err != nil {

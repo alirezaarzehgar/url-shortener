@@ -27,6 +27,9 @@ services:
       - KEYPOOL_DATABASE_CHOICE=scylladb
       - SCYLLADB_CLUSTER=scylla1 scylla2 scylla3
       - SCYLLADB_KEY_RANGE="${SCYLLADB_KEY_RANGE}"
+      - CACHE_TTL_URL_CREATE=5
+      - CACHE_TTL_URL_VISIT=5
+
     ports:
       - 8001:8000
   shortener2:
@@ -39,6 +42,8 @@ services:
       - KEYPOOL_DATABASE_CHOICE=scylladb
       - SCYLLADB_CLUSTER=scylla1 scylla2 scylla3
       - SCYLLADB_KEY_RANGE="${SCYLLADB_KEY_RANGE}"
+      - CACHE_TTL_URL_CREATE=5
+      - CACHE_TTL_URL_VISIT=5
     ports:
       - 8002:8000
   shortener3:
@@ -51,5 +56,7 @@ services:
       - KEYPOOL_DATABASE_CHOICE=scylladb
       - SCYLLADB_CLUSTER=scylla1 scylla2 scylla3
       - SCYLLADB_KEY_RANGE="${SCYLLADB_KEY_RANGE}"
+      - CACHE_TTL_URL_CREATE=5
+      - CACHE_TTL_URL_VISIT=5
     ports:
       - 8003:8000
