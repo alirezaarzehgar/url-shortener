@@ -21,7 +21,7 @@ services:
     build: ..
     environment:
       - SCYLLADB_CLUSTER_ID=0
-      - SHORTENER_ADDRESS=http://127.0.0.1:8000
+      - SHORTENER_ADDRESS=http://127.0.0.1:8001
       - TRANSPORT_HTTP_RUNNING_ADDRESS=:8000
       - SHORTENER_DATABASE_CHOICE=scylladb
       - KEYPOOL_DATABASE_CHOICE=scylladb
@@ -33,7 +33,7 @@ services:
     build: ..
     environment:
       - SCYLLADB_CLUSTER_ID=1
-      - SHORTENER_ADDRESS=http://127.0.0.1:8001
+      - SHORTENER_ADDRESS=http://127.0.0.1:8002
       - TRANSPORT_HTTP_RUNNING_ADDRESS=:8000
       - SHORTENER_DATABASE_CHOICE=scylladb
       - KEYPOOL_DATABASE_CHOICE=scylladb
@@ -45,7 +45,7 @@ services:
     build: ..
     environment:
       - SCYLLADB_CLUSTER_ID=2
-      - SHORTENER_ADDRESS=http://127.0.0.1:8002
+      - SHORTENER_ADDRESS=http://127.0.0.1:8003
       - TRANSPORT_HTTP_RUNNING_ADDRESS=:8000
       - SHORTENER_DATABASE_CHOICE=scylladb
       - KEYPOOL_DATABASE_CHOICE=scylladb

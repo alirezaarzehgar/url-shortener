@@ -79,7 +79,7 @@ func (m Migrator) runMigrations() error {
 func (m Migrator) seedKeyPool() error {
 	b := m.session.NewBatch(gocql.LoggedBatch)
 	for id := range m.clusterSize {
-		startCounter := id * ((1 << 31) - 1)
+		startCounter := id*((1<<31)-1) + 1
 		b.Query(`INSERT INTO urlshortener.keypool (key, counter) VALUES (?, ?);`, id, startCounter)
 	}
 	if err := m.session.ExecuteBatch(b); err != nil {
